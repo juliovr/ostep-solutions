@@ -45,27 +45,25 @@ void ns_mutex_acquire(ns_mutex_t *m) {
 
     if (m->count_room_1 == 0) {
         sem_post(&m->mutex);
-        sem_post(&m->room_2);
-    } else {
+        sem_post(&m->room_2);   // When there are no more threads in room 1, it will wake threads waiting to be process in room 2 (line 57: sem_wait(&->room_2))
+    } else {                    
         sem_post(&m->mutex);
-        sem_post(&m->room_1);
+        sem_post(&m->room_1);   // Ensure all threads waiting on line 37 (sem_wait(&m->room_1)) go to room 2
     }
 
-    //
-    // Wait until room 2 is empty
-    //
-    sem_wait(&m->room_2);
+
+    sem_wait(&m->room_2); // Acquiring the lock in room 2 it will process the critical section
 }
 
 void ns_mutex_release(ns_mutex_t *m) {
     sem_wait(&m->mutex);
-    m->count_room_2--;
+    m->count_room_2--; // Remove from room 2
     if (m->count_room_2 == 0) {
         sem_post(&m->mutex);
-        sem_post(&m->room_1);
+        sem_post(&m->room_1); // When there are no more threads in room 2, just signal room 1 to let threads go to room 2
     } else {
         sem_post(&m->mutex);
-        sem_post(&m->room_2);
+        sem_post(&m->room_2); // Process remaining threads waiting in room 2
     }
 }
 
