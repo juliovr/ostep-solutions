@@ -167,11 +167,7 @@ int main(int argc, char **argv)
     printf("Modify: %s", ctime(&st.st_mtim.tv_sec));
     printf("Change: %s", ctime(&st.st_ctim.tv_sec));
     printf("Birth: -\n");
-
-    // TODO: do the same with the gid
-
-
-
+    
 
     return EXIT_SUCCESS;
 }

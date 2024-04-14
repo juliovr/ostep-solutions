@@ -8,3 +8,6 @@ mystat: mystat.c
 
 myls: myls.c
 	$(CC) $(CFLAGS) -o bin/myls myls.c
+
+mytail: mytail.c
+	$(CC) $(CFLAGS) -o bin/mytail mytail.c
