@@ -15,7 +15,7 @@
 #define BUFFER_SIZE 4096
 #define USERNAME_SIZE 128
 #define GROUPNAME_SIZE 128
-#define DIR_NAMES_ARRAY_LENGTH 16
+#define DIR_NAMES_ARRAY_LENGTH 128
 
 typedef struct {
     char *dir_names[DIR_NAMES_ARRAY_LENGTH];
@@ -207,64 +207,76 @@ int main(int argc, char **argv)
             exit(1);
         }
         
+
+        char *files[DIR_NAMES_ARRAY_LENGTH] = {};
+        int count = 0;
+        
         while ((dirp = readdir(dp)) != NULL) {
             if (options.print_hidden == 0 && *dirp->d_name == '.') {
                 // Do not print hidden files/folders
             } else {
-                if (options.print_stats == 1) {
-                    char complete_name[BUFFER_SIZE] = {};
-                    snprintf(complete_name, BUFFER_SIZE, "%s/%s", dir_name, dirp->d_name);
-                    
-                    struct stat st;
-                    int rc = lstat(complete_name, &st);
-                    if (rc < 0) {
-                        fprintf(stderr, "%s: cannot stat '%s': %s\n", argv[0], complete_name, strerror(errno));
-                        exit(EXIT_FAILURE);
-                    }
-
-                    char username[USERNAME_SIZE] = {};
-                    extract_username_from_uid(username, st.st_uid);
-
-                    char groupname[GROUPNAME_SIZE];
-                    extract_groupname_from_gid(groupname, st.st_gid);
-
-                    char filetype;
-                    switch (st.st_mode & S_IFMT) {
-                        case S_IFDIR: filetype = 'd'; break;
-                        case S_IFLNK: filetype = 'l'; break;
-                        case S_IFREG: filetype = '-'; break;
-                    }
-
-                    printf("%c%c%c%c%c%c%c%c%c%c %3ld %s %s %7ld %s\n", 
-                        filetype,
-
-                        (st.st_mode & S_IRUSR ? 'r' : '-'),
-                        (st.st_mode & S_IWUSR ? 'w' : '-'),
-                        (st.st_mode & S_IXUSR ? 'x' : '-'),
-
-                        (st.st_mode & S_IRGRP ? 'r' : '-'),
-                        (st.st_mode & S_IWGRP ? 'w' : '-'),
-                        (st.st_mode & S_IXGRP ? 'x' : '-'),
-
-                        (st.st_mode & S_IROTH ? 'r' : '-'),
-                        (st.st_mode & S_IWOTH ? 'w' : '-'),
-                        (st.st_mode & S_IXOTH ? 'x' : '-'),
-                        
-                        st.st_nlink,
-
-                        username,
-                        groupname,
-                        
-                        st.st_size,
-                        
-                        // ctime(&st.st_atim.tv_sec),
-                        
-                        dirp->d_name);
-                } else {
-                    printf("%s  ", dirp->d_name);
-                }
+                files[count++] = dirp->d_name;
             }
         }
+
+        sort_quick_3_way(files, count);
+
+        for (int i = 0; i < count; i++) {
+            char *file = files[i];
+            if (options.print_stats == 1) {
+                char file_full_pathname[BUFFER_SIZE] = {};
+                snprintf(file_full_pathname, BUFFER_SIZE, "%s/%s", dir_name, file);
+                
+                struct stat st;
+                int rc = lstat(file_full_pathname, &st);
+                if (rc < 0) {
+                    fprintf(stderr, "%s: cannot stat '%s': %s\n", argv[0], file_full_pathname, strerror(errno));
+                    exit(EXIT_FAILURE);
+                }
+
+                char username[USERNAME_SIZE] = {};
+                extract_username_from_uid(username, st.st_uid);
+
+                char groupname[GROUPNAME_SIZE];
+                extract_groupname_from_gid(groupname, st.st_gid);
+
+                char filetype;
+                switch (st.st_mode & S_IFMT) {
+                    case S_IFDIR: filetype = 'd'; break;
+                    case S_IFLNK: filetype = 'l'; break;
+                    case S_IFREG: filetype = '-'; break;
+                }
+
+                printf("%c%c%c%c%c%c%c%c%c%c %3ld %s %s %7ld %s\n", 
+                    filetype,
+
+                    (st.st_mode & S_IRUSR ? 'r' : '-'),
+                    (st.st_mode & S_IWUSR ? 'w' : '-'),
+                    (st.st_mode & S_IXUSR ? 'x' : '-'),
+
+                    (st.st_mode & S_IRGRP ? 'r' : '-'),
+                    (st.st_mode & S_IWGRP ? 'w' : '-'),
+                    (st.st_mode & S_IXGRP ? 'x' : '-'),
+
+                    (st.st_mode & S_IROTH ? 'r' : '-'),
+                    (st.st_mode & S_IWOTH ? 'w' : '-'),
+                    (st.st_mode & S_IXOTH ? 'x' : '-'),
+                    
+                    st.st_nlink,
+
+                    username,
+                    groupname,
+                    
+                    st.st_size,
+                    
+                    // ctime(&st.st_atim.tv_sec),
+                    
+                    file);
+            } else {
+                printf("%s  ", file);
+            }
+        }
+
 
         closedir(dp);
     }
