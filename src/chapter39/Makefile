@@ -1,10 +1,10 @@
 CC = gcc
 CFLAGS = -Og -g
 
-all: my_stat my_ls
+all: mystat myls
 
-my_stat: my_stat.c
-	$(CC) $(CFLAGS) -o bin/my_stat my_stat.c
+mystat: mystat.c
+	$(CC) $(CFLAGS) -o bin/mystat mystat.c
 
-my_ls: my_ls.c
-	$(CC) $(CFLAGS) -o bin/my_ls my_ls.c
+myls: myls.c
+	$(CC) $(CFLAGS) -o bin/myls myls.c
