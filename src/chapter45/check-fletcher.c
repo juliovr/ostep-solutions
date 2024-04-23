@@ -15,6 +15,7 @@ u16 compute_checksum(char *filename)
     int fd;
     if ((fd = open(filename, O_RDONLY, 0)) < 0) {
         fprintf(stderr, "%s\n", strerror(errno));
+        exit(1);
     }
 
     int s1 = 0;
