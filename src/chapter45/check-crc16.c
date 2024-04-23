@@ -65,37 +65,28 @@ u16 compute_checksum(char *filename)
     int n = 9;
     int w = n - 1;
     u8 M[] = {
-        1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 
+        0b10101010, 
+        0b00100100, 
+        0b11111000, 
+        0b00100011, 
     };
-    int len_m = 32;
+    int len_m = sizeof(M);
     u16 checksum = 0;
 
-    int R[w];
-    memset(R, 0, sizeof(R));
+    int R = 0;
     
     for (int i = 0; i < len_m; i++) {
-        R[0] ^= M[i];
-        int leftmost_bit_set = (R[0] == 1);
-        
-        // shift left by 1
-        int r_index;
-        for (r_index = 0; r_index < w - 1; r_index++) {
-            R[r_index] = R[r_index + 1];
-        }
-        R[r_index] = 0;
-
-        if (leftmost_bit_set) {
-            for (int j = 0; j < w; j++) {
-                R[j] ^= ((P >> w - 1 - j) & 1);
+        R ^= M[i];
+        for (int bit = 0; bit < 8; bit++) {
+            int leftmost_bit_set = (R & 0x80);
+            R = (R << 1) & 0xFF;
+            if (leftmost_bit_set) {
+                R ^= P;
             }
         }
     }
 
-    int shift = w - 1;
-    for (int i = 0; i < w; i++) {
-        checksum |= (R[i] << shift);
-        shift--;
-    }
+    checksum = R;
 
     return checksum;
 }
