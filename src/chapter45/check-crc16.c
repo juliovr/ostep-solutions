@@ -52,24 +52,46 @@ u16 compute_checksum(char *filename)
     // }
 
     // close(fd);
-    
+
     long P = 0b100000111;
     int n = 9;
     int w = n - 1;
-    long M = 0b10101010001001001111100000100011;
+    u8 M_original[] = {
+        1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 
+    };
     int len_m = 32;
     u16 checksum = 0;
 
-    M <<= w;
-    print_bits(M);
+    int new_len = len_m + w;
+    u8 M[new_len];
+    int m_index;
+    for (m_index = 0; m_index < len_m; m_index++) {
+        M[m_index] = M_original[m_index];
+    }
+    // Perform shift M <<= w in "array-style"
+    for (; m_index < new_len; m_index++) {
+        M[m_index] = 0;
+    }
+    
+
     for (int i = 0; i < len_m; i++) {
-        if (M >> (len_m - i - 1 + w)) {
-            int poly_mask_window = len_m - i - n + w;
-            M ^= (P << poly_mask_window);
+        if (M[i]) {
+            for (int j = 0; j < n; j++) {
+                M[i + j] ^= ((P >> n - 1 - j) & 1);
+            }
         }
     }
 
-    checksum = M;
+    int shift = w - 1;
+    for (int i = new_len - w; i < new_len; i++) {
+        checksum |= (M[i] << shift);
+        shift--;
+    }
+
+    // int R = 0;
+    // for (int i = 0; i < len_m; i++) {
+    //     R ^= (M >> len_m - i - 1);
+    // }
 
     return checksum;
 }
