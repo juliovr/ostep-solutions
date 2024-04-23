@@ -33,6 +33,14 @@ void print_bits(long n)
     printf("%s\n", bits);
 }
 
+void print_binary_array(int array[], int size)
+{
+    for (int i = 0; i < size; i++) {
+        printf("%d", array[i]);
+    }
+    printf("\n");
+}
+
 u16 compute_checksum(char *filename)
 {
     // int fd;
@@ -56,42 +64,38 @@ u16 compute_checksum(char *filename)
     long P = 0b100000111;
     int n = 9;
     int w = n - 1;
-    u8 M_original[] = {
+    u8 M[] = {
         1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 
     };
     int len_m = 32;
     u16 checksum = 0;
 
-    int new_len = len_m + w;
-    u8 M[new_len];
-    int m_index;
-    for (m_index = 0; m_index < len_m; m_index++) {
-        M[m_index] = M_original[m_index];
-    }
-    // Perform shift M <<= w in "array-style"
-    for (; m_index < new_len; m_index++) {
-        M[m_index] = 0;
-    }
+    int R[w];
+    memset(R, 0, sizeof(R));
     
-
     for (int i = 0; i < len_m; i++) {
-        if (M[i]) {
-            for (int j = 0; j < n; j++) {
-                M[i + j] ^= ((P >> n - 1 - j) & 1);
+        R[0] ^= M[i];
+        int leftmost_bit_set = (R[0] == 1);
+        
+        // shift left by 1
+        int r_index;
+        for (r_index = 0; r_index < w - 1; r_index++) {
+            R[r_index] = R[r_index + 1];
+        }
+        R[r_index] = 0;
+
+        if (leftmost_bit_set) {
+            for (int j = 0; j < w; j++) {
+                R[j] ^= ((P >> w - 1 - j) & 1);
             }
         }
     }
 
     int shift = w - 1;
-    for (int i = new_len - w; i < new_len; i++) {
-        checksum |= (M[i] << shift);
+    for (int i = 0; i < w; i++) {
+        checksum |= (R[i] << shift);
         shift--;
     }
-
-    // int R = 0;
-    // for (int i = 0; i < len_m; i++) {
-    //     R ^= (M >> len_m - i - 1);
-    // }
 
     return checksum;
 }
@@ -109,11 +113,12 @@ int main(int argc, char **argv)
 
         printf("file %s: checksum = 0x%x\n", filename, checksum);
         // print_bits(checksum);
-        int expected = 0b00000000000000000000000011011110; // 0xde
+        int expected = 0b11011110; // 0xde
         if (expected == checksum) {
             printf("valid\n");
         } else {
-            printf("not valid!, expected = 0x%x\n", expected);
+            printf("not valid!, expected = 0x%x -> ", expected);
+            print_bits(expected);
         }
     }
     
